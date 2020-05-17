@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %} Home {% endblock %}
+
+{% block header-button %}
+<a href={% url 'logout'%} class ="btn btn-primary btn-sm">Salir</a>
+{% endblock %}
+
+{% block content %}
+<script type="text/javascript">
+    function mostrar(){
+        $('#cargaModal').modal('show');
+    }
+    function carga(){
+        $('#cargaModal').modal('hide');
+    }
+</script>
+{% load crispy_forms_tags %}
+    <div class = "container" >
+    {% if opiniones %}
+           <div class="container" onload="carga();">
+               <p>Resultados para: <span class="font-weight-bold">{{ consulta.peticion }} </span>
+                {% if consulta.fecha_inicial == None and consulta.fecha_final == None %}
+                    <span>en cualquier fecha</span>
+                {% elif consulta.fecha_inicial != None and consulta.fecha_final != None %}
+                    <span>desde {{ consulta.fecha_inicial}} hasta {{ consulta.fecha_final }}</span>
+                {% elif consulta.fecha_inicial != None %}
+                    <span> desde {{consulta.fecha_inicial}} </span>
+                {% else %}
+                    <span> hasta {{consulta.fecha_final}} </span>
+                {% endif %}
+              </p>
+                <div class="card-columns">
+                    {% for n in opiniones %}
+                    <div class="card">
+                        <div class="card-body justify-content-between">
+                            <h6 class="card-title">{{ n.nombre }}</h5>
+                            <p class="text-muted">{{ n.fecha }}</p>
+                       </div>
+                        <div class="card-footer bg-white" style="border: none;">
+                            <a href={{n.url}} target="_blank" class="btn btn-primary btn-sm">Consultar</a>
+                        </div>
+                    </div>
+                     {% endfor %}
+                </div>   
+            </div>
+    {% elif peti %}
+        <p class="text-danger">No se ha podido encontrar ninguna noticia en nuestras fuentes para esta consulta :(</p>   
+    {% endif %}
+    <div class="container mt-9">
+        <h4>Consulta lo que quieras</h4>
+        <p>Puedes consultar una frase o varios temas distintos</p>
+        <form class = "form-horizontal" method="post">
+            <div class = "form-group">
+                {% csrf_token %}
+                {{ form | crispy }}
+                {{ form.media }}
+                <button type="submit" onclick="mostrar();" class ="btn btn-primary btn-lg">Consultar</button>
+            </div>
+        </form>
+    </div>
+    <div class="modal hide fade" id="cargaModal" tabindex="-1" role="dialog" aria-labelledby="cargaModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content justify-content-center">
+          <div class="modal-header justify-content-center" >
+              <h5 class="modal-title" id="cargaModalLabel">Cargando...</h5>
+            </div>
+            <div class="m-5 d-flex justify-content-center">
+                <div class="spinner-border" role="status">
+                  <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+            
+    
+    
+</div>
+
+
+{% endblock %}
