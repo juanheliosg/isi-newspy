@@ -8,7 +8,7 @@ handlers:
   static_dir: static/
 
 #Variables de entorno
-  fghfghfghf
+
 
 # This handler routes all requests not caught above to your main app. It is
 # required when static routes are defined, but can be omitted (along with
