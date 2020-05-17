@@ -7,6 +7,8 @@ __pycache__/
 *.so
 #static
 static/
+#el app.yaml con las variables de entorno
+app.yaml
 # Distribution / packaging
 .Python
 build/
