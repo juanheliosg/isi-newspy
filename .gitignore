@@ -7,8 +7,10 @@ __pycache__/
 *.so
 #static
 static/
+lib/
+nltk_data/
 #el app.yaml con las variables de entorno
-*.yaml
+/app.yaml
 # Distribution / packaging
 .Python
 build/

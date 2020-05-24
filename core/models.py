@@ -9,7 +9,9 @@ from extraccion.scrappers import consultar_rss
 from extraccion.apis import consultar_twitter
 import re #Para regex
 
+
 LENGTH = 255
+
 
 class Consulta(models.Model):
     """
@@ -24,8 +26,8 @@ class Consulta(models.Model):
     fecha_inicial = models.DateField(blank= True, null=True)
     fecha_final = models.DateField(blank=True, null=True)
     user = models.ForeignKey(User,null = True, on_delete=models.SET_NULL)
-    MATCHING_UMBRAL_DB = 0.8
-    MATCHING_UMBRAL_OUT = 1
+    MATCHING_UMBRAL_DB = 0.3
+    MATCHING_UMBRAL_OUT = 0.4
 
     def obtener_opiniones(self, update = False):
         """
@@ -33,18 +35,22 @@ class Consulta(models.Model):
         update: Declara si es necesario buscar en las fuentes existentes aunque existan opiniones distintas
         """
        
-     
+        
         tokens = self.devolver_tokens_procesados()
+        print("Tokens obtenidos y procesados")
         opiniones = self.obtener_opiniones_desde_db(tokens)
-           
+        print("Informacion procesada a la base de datos")
         #Comprobar si no existe una consulta previa exactamente igual
         if (update):
             opiniones_fuera = self.obtener_opiniones_desde_fuera(tokens)
             opiniones.extend(opiniones_fuera)
+        print("Opiniones extraidas de las fuentes de información")
 
         opiniones = [x for x in opiniones if self.en_fecha(x)] #Nos quedamos solo con las que están en fecha
         self.guardar_consultas(opiniones)
-        
+        print("Consultas guardadas dentro del sistema")
+    
+
 
         return opiniones
         
@@ -76,19 +82,25 @@ class Consulta(models.Model):
         opiniones_sin_procesar = []
         for fuente in fuentes:
             opiniones_sin_procesar.extend(fuente.consultar_fuente(tokens))
-
+        print("Fuentes consultadas")
         opiniones_finales = []
      
         for opinion in opiniones_sin_procesar:
             punt_titulo = self.calcular_puntuacion(tokens,opinion['title'])
             punt_cuerpo = self.calcular_puntuacion(tokens,opinion['description'])
-
+    
             if punt_cuerpo + punt_titulo > Consulta.MATCHING_UMBRAL_OUT and not Opinion.objects.filter(url = opinion['link']):
                 #Creamos las opiniones y las guardamos en la bd con create
-                opiniones_finales.append(Opinion.objects.create(nombre=re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+','',opinion['title']),
+                re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+','',opinion['title'])
+                titulo = unidecode(opinion['title'])
+
+                try:
+                    opiniones_finales.append(Opinion.objects.create(nombre=titulo,
                                                  fecha=opinion['fecha'],
                                                  url=opinion['link']))
-        
+                except:
+                    print("ERROR CREANDO NUEVA OPINION")
+                    print(opinion)
       
 
         return opiniones_finales
@@ -148,15 +160,10 @@ class Consulta(models.Model):
 
     def calcular_puntuacion(self,tokens, texto):
         """
-        POSIBLEMENTE SEA MÁS CORRECTO QUE SEA UN MÉTODO DE CLASE
-        Calcula una puntuación de viabilidad al texto
-        0 -> Si la noticia no tiene nada que ver con los tokens de la consulta
-        > 1 . Si la noticia tiene varias palabras dentro
-
-        Una mejroa próxima es utilizar una sigmoide.
+        Calcula una puntuación sobre la pertenencia de un texto a los tokens de la consulta
         """
 
-        puntuacion = 0
+        puntuacion = 0 
         texto = unidecode(texto.lower())
         for palabra in tokens:
             for sym in tokens[palabra]['sinonimos_raiz']:
@@ -194,26 +201,37 @@ class Consulta(models.Model):
         Todos los sinonimos contienen solo la raiz aplicando el algoritmo de snowball stemmer.
         No se ha empleado lematización por que nltk no tiene soporte para el español.
         """
-
-        trans = Translator()
+        traducir = True
+        """
+        try:
+           trans = Translator()
+        except:
+            print("No se pudo establecer contacto con el servicio de traduccion")
+            traducir = False
+        """
         texto_procesado = unidecode(self.peticion.lower()) #Quitamos acentos y pasamos a minusculas
+        trans = Translator()
         tokens = word_tokenize(texto_procesado,'spanish')
         tokens_completos = {}
         #Utilizamos NLTK para primero eliminar las stopwords(la,el etc)
         #Posteriormente usamos wordnet para extraer sinónimos
         stemmer = SnowballStemmer('spanish')
+
         for token in tokens:
             if token not in stopwords.words('spanish'):
                 sinonimos = []
                 syms = []
+                
                 try:
                     #Traducimos a inglés 
-                    syms = wordnet.synsets(trans.translate(token,src='es',dest='en').text)[0].lemma_names('spa')
-                    for sym in syms: 
-                        sinonimos.append(stemmer.stem(sym))
+                    if traducir:
+                        syms = wordnet.synsets(trans.translate(token,src='es',dest='en').text)[0].lemma_names('spa')
+                        
+                        for sym in syms: 
+                            sinonimos.append(stemmer.stem(sym))
                 except:
                     print("No se encontraron sinónimos para {}".format(token))
-                    
+                   
                 tokens_completos[token] = {
                     'sinonimos': syms,
                     'sinonimos_raiz': sinonimos,
@@ -221,7 +239,7 @@ class Consulta(models.Model):
                     'orig': token,
                 }
         #Sacamos la raíz principal de la palabra de ltexto
-        
+        print("NADA MÁS")
         for token in tokens_completos:
             tokens_completos[token]['raiz'] = stemmer.stem(token)
     
@@ -284,8 +302,4 @@ class Opinion(models.Model):
 
     def __str__(self):
         return self.nombre
-
-class Tag(models.Model):
-    nombre = models.CharField(max_length=LENGTH)
-    opiniones = models.ManyToManyField(Opinion, related_name='tags')
 

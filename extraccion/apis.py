@@ -5,9 +5,6 @@ import os #para conectarse al sistema operativo
 #SOLO PARA TESTS
 from dotenv import load_dotenv
 
-dotenv_path ='../newspy/.env'
-load_dotenv(dotenv_path) #cargamos las variables de entorno
-
 #auth = tweepy.OAuthHandler()
 def consultar_twitter(tokens):
     """
@@ -47,16 +44,17 @@ def consultar_twitter(tokens):
 
     opiniones = []
     for tweet in search_res:
-        if tweet.entities['urls']:
+        if tweet and tweet.entities['urls']:
              #Elimnamos URLS por que son feas
             opiniones.append({
                 'title': tweet.text,
                 'description':'',
                 'link': tweet.entities['urls'][0]['url'],
                 'fecha': tweet.created_at.date() #Convertimos a formato date
-            })
+              })
     
-
+    print("TWITTER CONSULTADO")
+    
     return opiniones
     
 

@@ -10,7 +10,7 @@
     function mostrar(){
         $('#cargaModal').modal('show');
     }
-    function carga(){
+        function carga(){
         $('#cargaModal').modal('hide');
     }
 </script>
@@ -30,7 +30,7 @@
                 {% endif %}
               </p>
                 <div class="card-columns">
-                    {% for n in opiniones %}
+                    {% for n in opiniones|dictsort:"fecha" %}
                     <div class="card">
                         <div class="card-body justify-content-between">
                             <h6 class="card-title">{{ n.nombre }}</h5>
@@ -44,17 +44,20 @@
                 </div>   
             </div>
     {% elif peti %}
-        <p class="text-danger">No se ha podido encontrar ninguna noticia en nuestras fuentes para esta consulta :(</p>   
+        <p class="text-danger font-weight-bold">No se ha podido encontrar ninguna noticia en nuestras fuentes para esta consulta :(</p>   
     {% endif %}
     <div class="container mt-9">
         <h4>Consulta lo que quieras</h4>
-        <p>Puedes consultar una frase o varios temas distintos</p>
-        <form class = "form-horizontal" method="post">
+        <p>
+            Puedes consultar una frase o varias palabras relacionadas con lo que quieras saber. <br>Si quieres buscar en nuestro histórico
+            de noticias puedes usar las fechas.
+        </p>
+        <form class = "form-horizontal" method="post" id="submit-button" onsubmit="mostrar()">
             <div class = "form-group">
                 {% csrf_token %}
                 {{ form | crispy }}
                 {{ form.media }}
-                <button type="submit" onclick="mostrar();" class ="btn btn-primary btn-lg">Consultar</button>
+                <button type="submit" class ="btn btn-primary btn-lg">Consultar</button>
             </div>
         </form>
     </div>

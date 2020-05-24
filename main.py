@@ -6,4 +6,11 @@ from newspy.wsgi import application
 # discoverable by App Engine without additional configuration.
 # Alternatively, you can add a custom entrypoint field in your app.yaml:
 # entrypoint: gunicorn -b :$PORT mysite.wsgi
+
+try:
+    import googleclouddebugger
+    googleclouddebugger.enable()
+except ImportError:
+    pass
+
 app = application

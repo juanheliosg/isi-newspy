@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from core.forms import QueryForm
 from core.models import Consulta
 from datetime import datetime
+from unidecode import unidecode
 # Create your views here.
 
 class QueryProcessorView(LoginRequiredMixin, View):
@@ -16,7 +17,6 @@ class QueryProcessorView(LoginRequiredMixin, View):
         return render(request, self.template_name, {'form':form})
     
     def post(self, request,*args,**kwargs):
-        
         form = self.form_class(request.POST)
         if form.is_valid():
             fecha_inicial = request.POST['fecha_inicial']
@@ -32,13 +32,15 @@ class QueryProcessorView(LoginRequiredMixin, View):
                 fecha_final = None
             #Creamos la consulta con los datos pasados
             consulta = Consulta(
-                peticion = request.POST['peticion'],
+                peticion = unidecode(request.POST['peticion']),
                 fecha_inicial = fecha_inicial,
                 fecha_final = fecha_final,
                 user = request.user
             )
+            print("Consulta generada")
                  
             opiniones = consulta.obtener_opiniones(update=True)
+            print("Consulta procesada")
             
             return render(request, self.template_name, {'form': form, 'opiniones': opiniones, 'peti':True, 'consulta': consulta})
 

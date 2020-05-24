@@ -101,6 +101,9 @@ else:
  # Running on production App Engine, so connect to Google Cloud SQL using
     # the unix socket at /cloudsql/<your-cloudsql-connection string>
     DEBUG = False
+    url = os.path.join(BASE_DIR,'nltk_data')
+    from nltk import data as nltk_data
+    nltk_data.path.append(url)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -111,7 +114,6 @@ else:
         }
     }
 
-    
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
